@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spotify — Circles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Circular+Std:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sp-black:   #121212;
+      --sp-surface: #181818;
+      --sp-elevated:#282828;
+      --sp-hover:   #2a2a2a;
+      --sp-border:  #3e3e3e;
+      --sp-green:   #1DB954;
+      --sp-green-h: #1ed760;
+      --sp-white:   #FFFFFF;
+      --sp-sub:     #b3b3b3;
+      --sp-sub2:    #727272;
+      --sp-red:     #e91429;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--sp-black);
+      color: var(--sp-white);
+      font-family: 'Circular Std', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── APP SHELL ── */
+    .app {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 1fr 90px;
+      height: 100vh;
+      gap: 8px;
+      padding: 8px;
+      background: #000;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      grid-row: 1 / 2;
+      background: var(--sp-black);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-top {
+      padding: 1.5rem 1.5rem 0.5rem;
+    }
+
+    .sp-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .sp-logo svg { width: 32px; height: 32px; }
+
+    .sp-logo-text {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .sidebar-nav { list-style: none; }
+
+    .sidebar-nav li {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--sp-sub);
+      cursor: pointer;
+      transition: color 0.15s;
+      margin-bottom: 2px;
+    }
+
+    .sidebar-nav li:hover { color: var(--sp-white); }
+    .sidebar-nav li.active { color: var(--sp-white); }
+    .sidebar-nav li svg { flex-shrink: 0; }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--sp-elevated);
+      margin: 0.75rem 1.5rem;
+    }
+
+    .library-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1.5rem;
+    }
+
+    .library-header-label {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--sp-sub);
+    }
+
+    .library-pills {
+      display: flex;
+      gap: 0.4rem;
+      padding: 0.5rem 1.5rem;
+      overflow-x: auto;
+    }
+
+    .library-pills::-webkit-scrollbar { display: none; }
+
+    .pill {
+      background: var(--sp-elevated);
+      color: var(--sp-white);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.35rem 0.85rem;
+      border-radius: 100px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .pill:hover { background: var(--sp-border); }
+    .pill.active { background: var(--sp-white); color: var(--sp-black); }
+
+    .library-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.25rem 0.75rem 1rem;
+    }
+
+    .library-list::-webkit-scrollbar { width: 4px; }
+    .library-list::-webkit-scrollbar-thumb { background: var(--sp-border); border-radius: 2px; }
+
+    .lib-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .lib-item:hover { background: var(--sp-elevated); }
+
+    .lib-art {
+      width: 42px; height: 42px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .lib-art.round { border-radius: 50%; }
+
+    .lib-info-title { font-size: 0.82rem; font-weight: 700; margin-bottom: 2px; }
+    .lib-info-sub { font-size: 0.72rem; color: var(--sp-sub); }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      grid-row: 1 / 2;
+      background: var(--sp-surface);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      position: sticky; top: 0;
+      background: rgba(24,24,24,0.95);
+      backdrop-filter: blur(10px);
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .topbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-arrow {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      border: none;
+      color: var(--sp-white);
+      transition: background 0.15s;
+    }
+
+    .nav-arrow:hover { background: rgba(0,0,0,0.9); }
+
+    .topbar-tabs {
+      display: flex;
+      gap: 0.4rem;
+      background: rgba(0,0,0,0.4);
+      padding: 0.3rem;
+      border-radius: 100px;
+    }
+
+    .topbar-tab {
+      padding: 0.45rem 1.1rem;
+      border-radius: 100px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--sp-sub);
+      transition: all 0.15s;
+      border: none;
+      background: transparent;
+    }
+
+    .topbar-tab:hover { color: var(--sp-white); }
+    .topbar-tab.active { background: var(--sp-green); color: var(--sp-black); }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .topbar-btn {
+      background: var(--sp-white);
+      color: var(--sp-black);
+      border: none;
+      border-radius: 100px;
+      padding: 0.4rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.15s;
+    }
+
+    .topbar-btn:hover { background: #e0e0e0; transform: scale(1.03); }
+
+    .user-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--sp-green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: var(--sp-black);
+      cursor: pointer;
+    }
+
+    /* ── SCROLLABLE CONTENT ── */
+    .main-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 1.5rem 2rem;
+    }
+
+    .main-scroll::-webkit-scrollbar { width: 6px; }
+    .main-scroll::-webkit-scrollbar-thumb { background: var(--sp-border); border-radius: 3px; }
+
+    /* ── SCREENS ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── FEED SCREEN ── */
+    .feed-compose {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--sp-elevated);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 1.5rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .feed-compose:hover { background: var(--sp-hover); }
+
+    .compose-avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--sp-green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 900;
+      color: var(--sp-black);
+      flex-shrink: 0;
+    }
+
+    .compose-placeholder {
+      font-size: 0.88rem;
+      color: var(--sp-sub);
+    }
+
+    .feed-post {
+      background: var(--sp-elevated);
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      transition: background 0.15s;
+    }
+
+    .feed-post:hover { background: var(--sp-hover); }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.9rem 1rem 0.6rem;
+    }
+
+    .post-user-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: var(--sp-black);
+      flex-shrink: 0;
+    }
+
+    .post-user-name { font-size: 0.85rem; font-weight: 700; }
+    .post-time { font-size: 0.72rem; color: var(--sp-sub); margin-top: 1px; }
+
+    .post-track {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: rgba(0,0,0,0.3);
+      margin: 0 1rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .post-track:hover { background: rgba(0,0,0,0.5); }
+
+    .track-art {
+      width: 48px; height: 48px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .track-art img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    .track-play-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .post-track:hover .track-play-overlay { opacity: 1; }
+
+    .track-info { flex: 1; min-width: 0; }
+    .track-name { font-size: 0.88rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-artist { font-size: 0.75rem; color: var(--sp-sub); }
+
+    .track-playing-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.68rem;
+      color: var(--sp-green);
+      font-weight: 700;
+    }
+
+    .eq-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 12px;
+    }
+
+    .eq-bar {
+      width: 3px;
+      background: var(--sp-green);
+      border-radius: 1px;
+      animation: eq 0.8s ease-in-out infinite alternate;
+    }
+
+    .eq-bar:nth-child(2) { animation-delay: 0.15s; }
+    .eq-bar:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes eq {
+      from { height: 3px; }
+      to   { height: 12px; }
+    }
+
+    .post-caption {
+      padding: 0 1rem 0.75rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .post-comments-preview {
+      padding: 0 1rem 0.75rem;
+    }
+
+    .comment-bubble {
+      display: flex;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .comment-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 900;
+      color: var(--sp-black);
+      flex-shrink: 0;
+    }
+
+    .comment-body { font-size: 0.78rem; line-height: 1.4; }
+    .comment-user { font-weight: 700; margin-right: 0.4rem; }
+    .comment-text { color: rgba(255,255,255,0.75); }
+    .comment-time { font-size: 0.65rem; color: var(--sp-sub2); margin-top: 2px; }
+
+    .post-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.6rem 1rem 0.8rem;
+      border-top: 1px solid var(--sp-border);
+    }
+
+    .post-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: none;
+      border: none;
+      color: var(--sp-sub);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+
+    .post-action-btn:hover { color: var(--sp-white); background: rgba(255,255,255,0.07); }
+    .post-action-btn.liked { color: var(--sp-red); }
+    .post-action-btn.liked svg { fill: var(--sp-red); }
+
+    .post-action-btn svg { transition: transform 0.15s; }
+    .post-action-btn:hover svg { transform: scale(1.15); }
+
+    /* ── ROOMS SCREEN ── */
+    .rooms-create-btn {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: linear-gradient(135deg, var(--sp-green), #158a3e);
+      border-radius: 8px;
+      padding: 1.2rem 1.5rem;
+      cursor: pointer;
+      margin-bottom: 1.5rem;
+      transition: filter 0.15s;
+      border: none;
+      width: 100%;
+      color: var(--sp-black);
+      text-align: left;
+    }
+
+    .rooms-create-btn:hover { filter: brightness(1.1); }
+
+    .create-icon {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.2);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .create-label { font-size: 1rem; font-weight: 900; }
+    .create-sub { font-size: 0.78rem; opacity: 0.75; margin-top: 2px; }
+
+    .section-heading {
+      font-size: 1.25rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+    }
+
+    .room-card {
+      background: var(--sp-elevated);
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .room-card:hover { background: var(--sp-hover); }
+
+    .room-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 3px;
+      background: var(--sp-green);
+    }
+
+    .room-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .room-live-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: var(--sp-red);
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .live-pulse {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: white;
+      animation: livepulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes livepulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .room-name { font-size: 1rem; font-weight: 900; margin-bottom: 0.2rem; }
+    .room-host { font-size: 0.78rem; color: var(--sp-sub); margin-bottom: 0.5rem; }
+
+    .room-now-playing {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .room-track-art {
+      width: 36px; height: 36px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .room-track-art img { width: 100%; height: 100%; object-fit: cover; }
+
+    .room-track-info { flex: 1; min-width: 0; }
+    .room-track-name { font-size: 0.78rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .room-track-artist { font-size: 0.68rem; color: var(--sp-sub); }
+
+    .room-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .room-listeners {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .listener-avatars {
+      display: flex;
+    }
+
+    .listener-avatar {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--sp-elevated);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 900;
+      color: var(--sp-black);
+      margin-left: -6px;
+    }
+
+    .listener-avatar:first-child { margin-left: 0; }
+
+    .listener-count { font-size: 0.75rem; color: var(--sp-sub); }
+
+    .room-join-btn {
+      background: var(--sp-white);
+      color: var(--sp-black);
+      border: none;
+      border-radius: 100px;
+      padding: 0.45rem 1.1rem;
+      font-size: 0.78rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.15s;
+    }
+
+    .room-join-btn:hover { background: #e0e0e0; transform: scale(1.03); }
+
+    /* ── ROOM VIEW ── */
+    .room-view { display: none; }
+    .room-view.active { display: flex; flex-direction: column; height: 100%; }
+
+    .room-view-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--sp-border);
+      flex-shrink: 0;
+    }
+
+    .room-back-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: none;
+      border: none;
+      color: var(--sp-white);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0.4rem 0.75rem;
+      border-radius: 100px;
+      transition: background 0.15s;
+    }
+
+    .room-back-btn:hover { background: var(--sp-elevated); }
+
+    .room-view-body {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .room-main {
+      padding: 1.5rem;
+      overflow-y: auto;
+      border-right: 1px solid var(--sp-border);
+    }
+
+    .room-main::-webkit-scrollbar { width: 4px; }
+    .room-main::-webkit-scrollbar-thumb { background: var(--sp-border); border-radius: 2px; }
+
+    .room-album-art {
+      width: 200px; height: 200px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+      margin: 0 auto 1.5rem;
+    }
+
+    .room-album-art img { width: 100%; height: 100%; object-fit: cover; }
+
+    .room-album-art-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #404040, #282828);
+      font-size: 3rem;
+    }
+
+    .room-track-display { text-align: center; margin-bottom: 1.5rem; }
+    .room-track-title { font-size: 1.4rem; font-weight: 900; margin-bottom: 0.3rem; }
+    .room-track-sub { font-size: 0.9rem; color: var(--sp-sub); }
+
+    .room-progress {
+      margin-bottom: 1rem;
+    }
+
+    .progress-bar-wrap {
+      height: 4px;
+      background: var(--sp-border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 0.4rem;
+      cursor: pointer;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--sp-white);
+      border-radius: 2px;
+      transition: width 0.5s linear;
+    }
+
+    .progress-times {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      color: var(--sp-sub2);
+    }
+
+    .room-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .ctrl-btn {
+      background: none;
+      border: none;
+      color: var(--sp-sub);
+      cursor: pointer;
+      transition: color 0.15s, transform 0.1s;
+      display: flex;
+    }
+
+    .ctrl-btn:hover { color: var(--sp-white); transform: scale(1.1); }
+
+    .ctrl-btn.play-btn {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--sp-white);
+      color: var(--sp-black);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .ctrl-btn.play-btn:hover { transform: scale(1.06); background: var(--sp-white); color: var(--sp-black); }
+
+    .room-listeners-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .room-listener-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--sp-elevated);
+      border-radius: 100px;
+      padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .chip-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 900;
+      color: var(--sp-black);
+    }
+
+    /* Room Chat */
+    .room-chat {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .chat-header {
+      padding: 1rem 1.2rem;
+      font-size: 0.85rem;
+      font-weight: 900;
+      border-bottom: 1px solid var(--sp-border);
+      flex-shrink: 0;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .chat-messages::-webkit-scrollbar { width: 3px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--sp-border); border-radius: 2px; }
+
+    .chat-msg {
+      display: flex;
+      gap: 0.5rem;
+      animation: msgIn 0.25s ease;
+    }
+
+    @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .chat-msg-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.62rem;
+      font-weight: 900;
+      color: var(--sp-black);
+      flex-shrink: 0;
+    }
+
+    .chat-msg-body { }
+    .chat-msg-user { font-size: 0.72rem; font-weight: 900; margin-bottom: 2px; }
+    .chat-msg-text { font-size: 0.8rem; color: rgba(255,255,255,0.85); line-height: 1.4; }
+    .chat-msg-time { font-size: 0.62rem; color: var(--sp-sub2); margin-top: 2px; }
+
+    .chat-input-wrap {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid var(--sp-border);
+      flex-shrink: 0;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: var(--sp-elevated);
+      border: none;
+      border-radius: 100px;
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      color: var(--sp-white);
+      outline: none;
+      font-family: inherit;
+    }
+
+    .chat-input::placeholder { color: var(--sp-sub2); }
+    .chat-input:focus { background: var(--sp-hover); }
+
+    .chat-send-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--sp-green);
+      border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--sp-black);
+      transition: background 0.15s, transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    .chat-send-btn:hover { background: var(--sp-green-h); transform: scale(1.05); }
+
+    /* ── ACTIVITY SCREEN ── */
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.8rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 2px;
+    }
+
+    .activity-item:hover { background: var(--sp-elevated); }
+
+    .activity-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: var(--sp-black);
+      flex-shrink: 0;
+    }
+
+    .activity-info { flex: 1; min-width: 0; }
+    .activity-user { font-size: 0.85rem; font-weight: 700; }
+    .activity-detail { font-size: 0.75rem; color: var(--sp-sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .activity-song { color: var(--sp-green); font-weight: 700; }
+    .activity-time { font-size: 0.7rem; color: var(--sp-sub2); flex-shrink: 0; }
+
+    .activity-art {
+      width: 40px; height: 40px;
+      border-radius: 4px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .activity-art img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── NOW PLAYING BAR ── */
+    .now-playing-bar {
+      grid-column: 1 / 3;
+      background: var(--sp-elevated);
+      border-top: 1px solid var(--sp-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      border-radius: 0 0 8px 8px;
+      gap: 1rem;
+    }
+
+    .np-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .np-art {
+      width: 54px; height: 54px;
+      border-radius: 4px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .np-art img { width: 100%; height: 100%; object-fit: cover; }
+
+    .np-info { min-width: 0; }
+    .np-title { font-size: 0.82rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .np-artist { font-size: 0.72rem; color: var(--sp-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .np-heart {
+      background: none;
+      border: none;
+      color: var(--sp-green);
+      cursor: pointer;
+      padding: 0.25rem;
+      transition: transform 0.1s;
+    }
+
+    .np-heart:hover { transform: scale(1.2); }
+
+    .np-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      flex: 1;
+    }
+
+    .np-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .np-ctrl {
+      background: none;
+      border: none;
+      color: var(--sp-sub);
+      cursor: pointer;
+      transition: color 0.15s, transform 0.1s;
+      display: flex;
+    }
+
+    .np-ctrl:hover { color: var(--sp-white); }
+
+    .np-play {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--sp-white);
+      color: var(--sp-black);
+      border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .np-play:hover { transform: scale(1.06); }
+
+    .np-progress {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .np-time { font-size: 0.65rem; color: var(--sp-sub2); }
+
+    .np-bar-wrap {
+      flex: 1;
+      height: 4px;
+      background: var(--sp-border);
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .np-bar-fill {
+      height: 100%;
+      background: var(--sp-sub);
+      border-radius: 2px;
+      transition: width 0.5s linear;
+    }
+
+    .np-bar-wrap:hover .np-bar-fill { background: var(--sp-green); }
+
+    .np-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+      justify-content: flex-end;
+    }
+
+    .np-right-btn {
+      background: none;
+      border: none;
+      color: var(--sp-sub);
+      cursor: pointer;
+      display: flex;
+      transition: color 0.15s;
+    }
+
+    .np-right-btn:hover { color: var(--sp-white); }
+    .np-right-btn.active { color: var(--sp-green); }
+
+    .volume-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .volume-bar {
+      width: 70px;
+      height: 4px;
+      background: var(--sp-border);
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .volume-fill {
+      height: 100%;
+      background: var(--sp-sub);
+      border-radius: 2px;
+      width: 70%;
+    }
+
+    .volume-bar:hover .volume-fill { background: var(--sp-green); }
+
+    /* ── MODALS ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--sp-elevated);
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      animation: modalIn 0.25s cubic-bezier(0.34,1.3,0.64,1);
+    }
+
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: none; } }
+
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: 900;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-input-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--sp-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+
+    .modal-input {
+      width: 100%;
+      background: var(--sp-hover);
+      border: 1px solid var(--sp-border);
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      color: var(--sp-white);
+      outline: none;
+      font-family: inherit;
+      margin-bottom: 1rem;
+      transition: border-color 0.15s;
+    }
+
+    .modal-input:focus { border-color: var(--sp-white); }
+    .modal-input::placeholder { color: var(--sp-sub2); }
+
+    .modal-textarea {
+      width: 100%;
+      background: var(--sp-hover);
+      border: 1px solid var(--sp-border);
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      color: var(--sp-white);
+      outline: none;
+      font-family: inherit;
+      margin-bottom: 1rem;
+      resize: none;
+      height: 90px;
+      transition: border-color 0.15s;
+    }
+
+    .modal-textarea:focus { border-color: var(--sp-white); }
+    .modal-textarea::placeholder { color: var(--sp-sub2); }
+
+    .privacy-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .privacy-opt {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.65rem;
+      border-radius: 6px;
+      border: 2px solid var(--sp-border);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 700;
+      transition: all 0.15s;
+    }
+
+    .privacy-opt:hover { border-color: var(--sp-sub); }
+    .privacy-opt.selected { border-color: var(--sp-green); background: rgba(29,185,84,0.1); }
+
+    .modal-btn-row {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+
+    .modal-cancel {
+      background: none;
+      border: none;
+      color: var(--sp-sub);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0.6rem 1rem;
+      border-radius: 100px;
+      transition: color 0.15s;
+      font-family: inherit;
+    }
+
+    .modal-cancel:hover { color: var(--sp-white); }
+
+    .modal-confirm {
+      background: var(--sp-green);
+      color: var(--sp-black);
+      border: none;
+      border-radius: 100px;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.85rem;
+      font-weight: 900;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .modal-confirm:hover:not(:disabled) { background: var(--sp-green-h); transform: scale(1.02); }
+    .modal-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Comment modal specifics */
+    .comments-list {
+      max-height: 260px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .comments-list::-webkit-scrollbar { width: 3px; }
+    .comments-list::-webkit-scrollbar-thumb { background: var(--sp-border); border-radius: 2px; }
+
+    .comment-full {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .comment-full-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 900;
+      color: var(--sp-black);
+      flex-shrink: 0;
+    }
+
+    .cf-user { font-size: 0.82rem; font-weight: 900; }
+    .cf-time { font-size: 0.65rem; color: var(--sp-sub2); margin-left: 0.4rem; }
+    .cf-text { font-size: 0.82rem; color: rgba(255,255,255,0.85); margin-top: 3px; line-height: 1.4; }
+
+    .cf-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.4rem;
+    }
+
+    .cf-action {
+      background: none;
+      border: none;
+      color: var(--sp-sub2);
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      font-family: inherit;
+      transition: color 0.15s;
+    }
+
+    .cf-action:hover { color: var(--sp-white); }
+
+    .comment-input-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--sp-elevated);
+      border: 1px solid var(--sp-border);
+      color: var(--sp-white);
+      padding: 0.65rem 1.2rem;
+      border-radius: 100px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      opacity: 0;
+      transition: all 0.25s;
+      z-index: 1000;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Reactions */
+    .reactions-bar {
+      display: flex;
+      gap: 0.3rem;
+      padding: 0 1rem 0.6rem;
+    }
+
+    .reaction-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: var(--sp-elevated);
+      border: 1px solid var(--sp-border);
+      border-radius: 100px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .reaction-chip:hover { border-color: var(--sp-white); }
+    .reaction-chip.reacted { background: rgba(29,185,84,0.15); border-color: var(--sp-green); color: var(--sp-green); }
+    .reaction-emoji { font-size: 0.85rem; }
+
+    /* ── MISC ── */
+    .screen-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--sp-sub);
+      margin-bottom: 0.5rem;
+      padding-top: 1rem;
+    }
+
+    .divider { height: 1px; background: var(--sp-border); margin: 1rem 0; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ════════════════════════════════════
+       SIDEBAR
+  ════════════════════════════════════ -->
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <!-- Logo -->
+      <div class="sp-logo">
+        <svg viewBox="0 0 24 24" fill="#1DB954" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+        </svg>
+        <span class="sp-logo-text">Spotify</span>
+      </div>
+
+      <!-- Main Nav -->
+      <ul class="sidebar-nav">
+        <li class="active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/></svg>
+          Home
+        </li>
+        <li>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          Search
+        </li>
+      </ul>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Library -->
+    <div class="library-header">
+      <div class="library-header-label">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h4v18H3V3zm6 0h4v18H9V3zm6 4h4v14h-4V7z"/></svg>
+        Your Library
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color:var(--sp-sub); cursor:pointer;"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+
+    <div class="library-pills">
+      <div class="pill active">Playlists</div>
+      <div class="pill">Artists</div>
+      <div class="pill">Albums</div>
+    </div>
+
+    <div class="library-list">
+      <div class="lib-item">
+        <div class="lib-art" style="background:linear-gradient(135deg,#450af5,#c4efd9);">❤️</div>
+        <div>
+          <div class="lib-info-title">Liked Songs</div>
+          <div class="lib-info-sub">Playlist · 284 songs</div>
+        </div>
+      </div>
+      <div class="lib-item">
+        <div class="lib-art" style="background:#1a1a2e;">🌙</div>
+        <div>
+          <div class="lib-info-title">Late Night Drives</div>
+          <div class="lib-info-sub">Playlist · You</div>
+        </div>
+      </div>
+      <div class="lib-item">
+        <div class="lib-art round" style="background:#1e3a1e;">🎤</div>
+        <div>
+          <div class="lib-info-title">Frank Ocean</div>
+          <div class="lib-info-sub">Artist</div>
+        </div>
+      </div>
+      <div class="lib-item">
+        <div class="lib-art round" style="background:#3a1a3a;">🎵</div>
+        <div>
+          <div class="lib-info-title">Brent Faiyaz</div>
+          <div class="lib-info-sub">Artist</div>
+        </div>
+      </div>
+      <div class="lib-item">
+        <div class="lib-art" style="background:#2d1b69;">✨</div>
+        <div>
+          <div class="lib-info-title">Vibe Check ✓</div>
+          <div class="lib-info-sub">Playlist · You</div>
+        </div>
+      </div>
+      <div class="lib-item">
+        <div class="lib-art round" style="background:#1a3a2a;">🎹</div>
+        <div>
+          <div class="lib-info-title">Daniel Caesar</div>
+          <div class="lib-info-sub">Artist</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       MAIN CONTENT
+  ════════════════════════════════════ -->
+  <div class="main" id="mainContent">
+
+    <!-- Top Bar -->
+    <div class="main-topbar">
+      <div class="topbar-nav">
+        <button class="nav-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button class="nav-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="topbar-tabs">
+        <button class="topbar-tab active" onclick="switchTab('feed', this)">Friend Feed</button>
+        <button class="topbar-tab" onclick="switchTab('rooms', this)">Listening Rooms</button>
+        <button class="topbar-tab" onclick="switchTab('activity', this)">Activity</button>
+      </div>
+
+      <div class="topbar-right">
+        <button class="topbar-btn" onclick="openNotifications()">🔔 3</button>
+        <div class="user-avatar">R</div>
+      </div>
+    </div>
+
+    <!-- ─── FEED SCREEN ─── -->
+    <div class="main-scroll screen active" id="screen-feed">
+
+      <!-- Compose -->
+      <div class="feed-compose" onclick="openPostModal()">
+        <div class="compose-avatar">R</div>
+        <span class="compose-placeholder">Share what you're listening to…</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sp-sub)" stroke-width="2" style="margin-left:auto;flex-shrink:0;"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+
+      <!-- Posts -->
+      <div id="feedPosts"></div>
+    </div>
+
+    <!-- ─── ROOMS SCREEN ─── -->
+    <div class="main-scroll screen" id="screen-rooms">
+      <!-- Create Room -->
+      <button class="rooms-create-btn" onclick="openCreateRoomModal()">
+        <div class="create-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="black"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+        <div>
+          <div class="create-label">Create a Listening Room</div>
+          <div class="create-sub">Start a live listening party with friends</div>
+        </div>
+      </button>
+
+      <div class="section-heading">Live Now 🔴</div>
+      <div id="roomsList"></div>
+    </div>
+
+    <!-- ─── ACTIVITY SCREEN ─── -->
+    <div class="main-scroll screen" id="screen-activity">
+      <div class="section-heading" style="padding-top:0.5rem;">Friend Activity</div>
+      <div id="activityList"></div>
+    </div>
+
+    <!-- ─── ROOM VIEW (full room experience) ─── -->
+    <div class="room-view" id="roomView">
+      <div class="room-view-header">
+        <button class="room-back-btn" onclick="leaveRoom()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+          Leave Room
+        </button>
+        <div class="room-live-badge"><div class="live-pulse"></div> LIVE</div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sp-sub)" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <span id="roomListenerCount" style="font-size:0.82rem;font-weight:700;color:var(--sp-sub);">24 listening</span>
+        </div>
+      </div>
+      <div class="room-view-body">
+        <div class="room-main">
+          <div class="room-album-art" id="roomAlbumArt">
+            <div class="room-album-art-placeholder">🎵</div>
+          </div>
+          <div class="room-track-display">
+            <div class="room-track-title" id="roomTrackTitle">—</div>
+            <div class="room-track-sub" id="roomTrackArtist">—</div>
+          </div>
+          <div class="room-progress">
+            <div class="progress-bar-wrap">
+              <div class="progress-fill" id="roomProgress" style="width:38%;"></div>
+            </div>
+            <div class="progress-times">
+              <span id="roomTimeCurrent">1:34</span>
+              <span id="roomTimeTotal">4:07</span>
+            </div>
+          </div>
+          <div class="room-controls">
+            <button class="ctrl-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button class="ctrl-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v2H6zm0 5h12v2H6zm0 5h12v2H6z" opacity="0.3"/><path d="M6 6l12 6-12 6z"/></svg>
+            </button>
+            <button class="ctrl-btn play-btn" id="roomPlayBtn" onclick="toggleRoomPlay(this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" id="roomPlayIcon"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button class="ctrl-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86z"/><path d="M16 6h2v12h-2z"/></svg>
+            </button>
+            <button class="ctrl-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+            </button>
+          </div>
+          <div class="divider"></div>
+          <div class="screen-label">Listeners</div>
+          <div class="room-listeners-grid" id="roomListeners"></div>
+        </div>
+        <div class="room-chat">
+          <div class="chat-header">Room Chat 💬</div>
+          <div class="chat-messages" id="chatMessages"></div>
+          <div class="chat-input-wrap">
+            <input class="chat-input" id="chatInput" placeholder="Say something…" onkeydown="handleChatKey(event)"/>
+            <button class="chat-send-btn" onclick="sendChat()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- ════════════════════════════════════
+       NOW PLAYING BAR
+  ════════════════════════════════════ -->
+  <div class="now-playing-bar">
+    <div class="np-left">
+      <div class="np-art">
+        <img src="https://i.scdn.co/image/ab67616d0000b2735ef878a782c987d664b7460" alt="Now Playing" onerror="this.parentElement.style.background='#333'; this.style.display='none'"/>
+      </div>
+      <div class="np-info">
+        <div class="np-title">Who Knows</div>
+        <div class="np-artist">Daniel Caesar</div>
+      </div>
+      <button class="np-heart">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </button>
+    </div>
+
+    <div class="np-center">
+      <div class="np-controls">
+        <button class="np-ctrl" title="Shuffle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+        </button>
+        <button class="np-ctrl">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+        <button class="np-play" id="npPlayBtn" onclick="togglePlay(this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" id="npPlayIcon"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="np-ctrl">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86z"/><path d="M16 6h2v12h-2z"/></svg>
+        </button>
+        <button class="np-ctrl" title="Repeat">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+        </button>
+      </div>
+      <div class="np-progress">
+        <span class="np-time" id="npTimeCurrent">1:34</span>
+        <div class="np-bar-wrap" onclick="seekTrack(event, this)">
+          <div class="np-bar-fill" id="npBar" style="width:38%;"></div>
+        </div>
+        <span class="np-time">4:07</span>
+      </div>
+    </div>
+
+    <div class="np-right">
+      <button class="np-right-btn" onclick="switchTab('feed', null); showToast('📡 Circles — Friend Feed')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </button>
+      <button class="np-right-btn active" title="Circles — now active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+      </button>
+      <div class="volume-wrap">
+        <button class="np-right-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+        </button>
+        <div class="volume-bar">
+          <div class="volume-fill"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ════════════════════════════════════
+     MODALS
+════════════════════════════════════ -->
+
+<!-- Post Modal -->
+<div class="modal-overlay" id="postModal">
+  <div class="modal">
+    <div class="modal-title">Share to Your Circle</div>
+    <label class="modal-input-label">Song or Artist</label>
+    <input class="modal-input" id="postSongInput" placeholder="e.g. Blonde — Frank Ocean" oninput="validatePostModal()"/>
+    <label class="modal-input-label">Your thoughts</label>
+    <textarea class="modal-textarea" id="postCaptionInput" placeholder="What does this song mean to you?" oninput="validatePostModal()"></textarea>
+    <div class="modal-btn-row">
+      <button class="modal-cancel" onclick="closeModal('postModal')">Cancel</button>
+      <button class="modal-confirm" id="postConfirmBtn" disabled onclick="submitPost()">Post to Feed</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Room Modal -->
+<div class="modal-overlay" id="createRoomModal">
+  <div class="modal">
+    <div class="modal-title">Create Listening Room</div>
+    <label class="modal-input-label">Room Name</label>
+    <input class="modal-input" id="roomNameInput" placeholder="e.g. Late Night Vibes 🌙" oninput="validateRoomModal()"/>
+    <label class="modal-input-label">Privacy</label>
+    <div class="privacy-row">
+      <div class="privacy-opt selected" id="privPublic" onclick="selectPrivacy('public')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        Public
+      </div>
+      <div class="privacy-opt" id="privPrivate" onclick="selectPrivacy('private')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+        Private
+      </div>
+    </div>
+    <div class="modal-btn-row">
+      <button class="modal-cancel" onclick="closeModal('createRoomModal')">Cancel</button>
+      <button class="modal-confirm" id="roomConfirmBtn" disabled onclick="createRoom()">Create Room</button>
+    </div>
+  </div>
+</div>
+
+<!-- Comment Modal -->
+<div class="modal-overlay" id="commentModal">
+  <div class="modal" style="max-width:520px;">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.2rem;">
+      <div id="commentModalArt" style="width:48px;height:48px;border-radius:4px;overflow:hidden;flex-shrink:0;"></div>
+      <div>
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:0;" id="commentModalTitle">—</div>
+        <div style="font-size:0.78rem;color:var(--sp-sub);" id="commentModalArtist">—</div>
+      </div>
+      <button class="modal-cancel" style="margin-left:auto;" onclick="closeModal('commentModal')">✕</button>
+    </div>
+    <div class="comments-list" id="commentsListEl"></div>
+    <div class="comment-input-row">
+      <div class="compose-avatar" style="width:32px;height:32px;font-size:0.72rem;flex-shrink:0;">R</div>
+      <input class="modal-input" style="margin-bottom:0;flex:1;" id="commentInput" placeholder="Add a comment…" onkeydown="handleCommentKey(event)"/>
+      <button class="chat-send-btn" onclick="submitComment()" style="flex-shrink:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const COLORS = ['#1DB954','#3B82F6','#F59E0B','#EC4899','#8B5CF6','#EF4444','#10B981','#F97316'];
+
+const posts = [
+  {
+    id: 1,
+    user: 'Jessica', initial: 'J', color: '#10B981',
+    time: '3m ago',
+    track: { name: 'Blonde', artist: 'Frank Ocean', art: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526' },
+    caption: 'This album lives in another dimension. Every listen hits different. 🌊',
+    likes: 47, liked: false,
+    reactions: [{emoji:'🔥',count:12,reacted:false},{emoji:'❤️',count:8,reacted:false},{emoji:'😭',count:5,reacted:false}],
+    comments: [
+      { id:1, user:'Marcus', initial:'M', color:'#F59E0B', text:'Godspeed is literally perfect.', time:'2m ago', likes:4 },
+      { id:2, user:'Aisha', initial:'A', color:'#EC4899', text:'Nothing has touched my soul like this album fr', time:'1m ago', likes:7 },
+    ]
+  },
+  {
+    id: 2,
+    user: 'Tom', initial: 'T', color: '#EF4444',
+    time: '18m ago',
+    track: { name: 'Wasteland, Baby!', artist: 'Hozier', art: 'https://i.scdn.co/image/ab67616d0000b273b4dab2f66c4b05b2a48d2b2b' },
+    caption: 'Just rediscovered this and I genuinely forgot how good it is. Cherry Wine on repeat.',
+    likes: 23, liked: false,
+    reactions: [{emoji:'🔥',count:6,reacted:false},{emoji:'❤️',count:14,reacted:false},{emoji:'🎸',count:3,reacted:false}],
+    comments: [
+      { id:3, user:'Lena', initial:'L', color:'#8B5CF6', text:'Cherry Wine wrecks me every single time 😭', time:'10m ago', likes:2 },
+    ]
+  },
+  {
+    id: 3,
+    user: 'Priya', initial: 'P', color: '#8B5CF6',
+    time: '1h ago',
+    track: { name: 'Icon', artist: 'Brent Faiyaz', art: 'https://i.scdn.co/image/ab67616d0000b273d13f93c1c57a46f6cedd1248' },
+    caption: 'Brent Faiyaz is doing things nobody else is doing right now. Production is INSANE.',
+    likes: 91, liked: false,
+    reactions: [{emoji:'🔥',count:34,reacted:false},{emoji:'👑',count:22,reacted:false},{emoji:'❤️',count:15,reacted:false}],
+    comments: [
+      { id:4, user:'Jordan', initial:'J', color:'#3B82F6', text:'The way his voice sits in the mix... different breed', time:'45m ago', likes:11 },
+      { id:5, user:'Zara', initial:'Z', color:'#F59E0B', text:'Wasteland is a masterpiece start to finish', time:'30m ago', likes:8 },
+    ]
+  }
+];
+
+const rooms = [
+  {
+    id: 1,
+    name: 'New Drops Only 🎧',
+    host: 'DJ Marcus',
+    listeners: 47,
+    track: { name: 'Snooze', artist: 'SZA', art: 'https://i.scdn.co/image/ab67616d0000b2730c471c36970b9406bcc78f8c' },
+    chips: [
+      {i:'M',c:'#F59E0B'},{i:'J',c:'#10B981'},{i:'A',c:'#EC4899'},{i:'Z',c:'#3B82F6'},{i:'L',c:'#8B5CF6'}
+    ]
+  },
+  {
+    id: 2,
+    name: 'Late Night R&B 🌙',
+    host: 'Aisha K.',
+    listeners: 124,
+    track: { name: 'Come Thru', artist: 'Summer Walker', art: 'https://i.scdn.co/image/ab67616d0000b273eee33b0c63bf3e2d03d8c6df' },
+    chips: [
+      {i:'A',c:'#EC4899'},{i:'T',c:'#EF4444'},{i:'P',c:'#8B5CF6'},{i:'D',c:'#1DB954'},{i:'K',c:'#F97316'}
+    ]
+  },
+  {
+    id: 3,
+    name: 'Frank Ocean Fan Club',
+    host: 'Jessica W.',
+    listeners: 38,
+    track: { name: 'Self Control', artist: 'Frank Ocean', art: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526' },
+    chips: [
+      {i:'J',c:'#10B981'},{i:'R',c:'#1DB954'},{i:'N',c:'#3B82F6'},{i:'C',c:'#F59E0B'}
+    ]
+  }
+];
+
+const activity = [
+  { user:'Jessica', initial:'J', color:'#10B981', action:'❤️ loved', song:'Blonde — Frank Ocean', art:'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526', time:'3m' },
+  { user:'Tom', initial:'T', color:'#EF4444', action:'💬 commented on', song:'Save Your Tears — The Weeknd', art:'https://i.scdn.co/image/ab67616d0000b273a0d10e7451facf4ee49d4fcb', time:'9m' },
+  { user:'Marcus', initial:'M', color:'#F59E0B', action:'🔥 reacted to', song:'Icon — Brent Faiyaz', art:'https://i.scdn.co/image/ab67616d0000b273d13f93c1c57a46f6cedd1248', time:'15m' },
+  { user:'Aisha', initial:'A', color:'#EC4899', action:'🎧 joined room', song:'Late Night R&B 🌙', art:null, time:'18m' },
+  { user:'Priya', initial:'P', color:'#8B5CF6', action:'💬 commented on', song:'Who Knows — Daniel Caesar', art:'https://i.scdn.co/image/ab67616d0000b2735ef878a782c987d664b7460', time:'32m' },
+  { user:'Lena', initial:'L', color:'#3B82F6', action:'❤️ loved', song:'Cherry Wine — Hozier', art:'https://i.scdn.co/image/ab67616d0000b273b4dab2f66c4b05b2a48d2b2b', time:'41m' },
+  { user:'Jordan', initial:'J', color:'#F97316', action:'🔥 reacted to', song:'Snooze — SZA', art:'https://i.scdn.co/image/ab67616d0000b2730c471c36970b9406bcc78f8c', time:'55m' },
+];
+
+const chatSeedMessages = [
+  { user:'Marcus', initial:'M', color:'#F59E0B', text:'this song is TOO good rn 🔥', time:'2m ago' },
+  { user:'Aisha', initial:'A', color:'#EC4899', text:'agreed bro the drop at 2:30 is insane', time:'1m ago' },
+  { user:'Jessica', initial:'J', color:'#10B981', text:'someone add it to the playlist pls', time:'just now' },
+];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let state = {
+  activeTab: 'feed',
+  isPlaying: false,
+  roomIsPlaying: true,
+  currentRoom: null,
+  activeCommentPostId: null,
+  privacy: 'public',
+  progressInterval: null,
+  progressVal: 38,
+};
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function renderFeed() {
+  const container = document.getElementById('feedPosts');
+  container.innerHTML = '';
+  posts.forEach(post => {
+    const el = document.createElement('div');
+    el.className = 'feed-post';
+    el.id = `post-${post.id}`;
+    el.innerHTML = buildPostHTML(post);
+    container.appendChild(el);
+  });
+}
+
+function buildPostHTML(post) {
+  const reactionsHTML = post.reactions.map((r,i) =>
+    `<div class="reaction-chip ${r.reacted ? 'reacted' : ''}" onclick="toggleReaction(${post.id},${i})">
+      <span class="reaction-emoji">${r.emoji}</span>
+      <span>${r.count}</span>
+    </div>`
+  ).join('');
+
+  const commentsPreview = post.comments.slice(0,2).map(c =>
+    `<div class="comment-bubble">
+      <div class="comment-avatar" style="background:${c.color};">${c.initial}</div>
+      <div class="comment-body">
+        <span class="comment-user">${c.user}</span>
+        <span class="comment-text">${c.text}</span>
+        <div class="comment-time">${c.time}</div>
+      </div>
+    </div>`
+  ).join('');
+
+  return `
+    <div class="post-header">
+      <div class="post-user-avatar" style="background:${post.color};">${post.initial}</div>
+      <div>
+        <div class="post-user-name">${post.user}</div>
+        <div class="post-time">${post.time}</div>
+      </div>
+    </div>
+    <div class="post-track" onclick="showToast('▶ Playing ${post.track.name}')">
+      <div class="track-art">
+        <img src="${post.track.art}" alt="${post.track.name}" onerror="this.parentElement.style.background='#333';this.style.display='none'"/>
+        <div class="track-play-overlay">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+      <div class="track-info">
+        <div class="track-name">${post.track.name}</div>
+        <div class="track-artist">${post.track.artist}</div>
+      </div>
+      ${post.id === 3 ? `<div class="track-playing-badge"><div class="eq-bars"><div class="eq-bar" style="height:8px;"></div><div class="eq-bar" style="height:4px;"></div><div class="eq-bar" style="height:10px;"></div></div> Playing</div>` : ''}
+    </div>
+    <div class="post-caption">${post.caption}</div>
+    <div class="reactions-bar">${reactionsHTML}</div>
+    ${post.comments.length > 0 ? `<div class="post-comments-preview">${commentsPreview}</div>` : ''}
+    <div class="post-actions">
+      <button class="post-action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+        <svg width="16" height="16" viewBox="0 0 24 24" ${post.liked ? 'fill="currentColor"' : 'fill="none" stroke="currentColor" stroke-width="2"'}><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        ${post.likes}
+      </button>
+      <button class="post-action-btn" onclick="openCommentModal(${post.id})">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        ${post.comments.length}
+      </button>
+      <button class="post-action-btn" onclick="showToast('🔗 Link copied!')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Share
+      </button>
+    </div>`;
+}
+
+function renderRooms() {
+  const container = document.getElementById('roomsList');
+  container.innerHTML = '';
+  rooms.forEach(room => {
+    const div = document.createElement('div');
+    div.className = 'room-card';
+    const avatarsHTML = room.chips.map((c,i) =>
+      `<div class="listener-avatar" style="background:${c.c};margin-left:${i===0?'0':'-6px'}">${c.i}</div>`
+    ).join('');
+    div.innerHTML = `
+      <div class="room-card-top">
+        <div>
+          <div class="room-name">${room.name}</div>
+          <div class="room-host">Hosted by ${room.host}</div>
+        </div>
+        <div class="room-live-badge"><div class="live-pulse"></div> LIVE</div>
+      </div>
+      <div class="room-now-playing">
+        <div class="room-track-art"><img src="${room.track.art}" alt="${room.track.name}" onerror="this.parentElement.style.background='#333';this.style.display='none'"/></div>
+        <div class="room-track-info">
+          <div class="room-track-name">${room.track.name}</div>
+          <div class="room-track-artist">${room.track.artist}</div>
+        </div>
+      </div>
+      <div class="room-bottom">
+        <div class="room-listeners">
+          <div class="listener-avatars">${avatarsHTML}</div>
+          <span class="listener-count">${room.listeners} listening</span>
+        </div>
+        <button class="room-join-btn" onclick="joinRoom(${room.id})">Join</button>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function renderActivity() {
+  const container = document.getElementById('activityList');
+  container.innerHTML = '';
+  activity.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'activity-item';
+    div.innerHTML = `
+      <div class="activity-avatar" style="background:${a.color};">${a.initial}</div>
+      <div class="activity-info">
+        <div class="activity-user">${a.user}</div>
+        <div class="activity-detail">${a.action} <span class="activity-song">${a.song}</span></div>
+      </div>
+      ${a.art ? `<div class="activity-art"><img src="${a.art}" alt="" onerror="this.parentElement.style.background='#333';this.style.display='none'"/></div>` : ''}
+      <div class="activity-time">${a.time}m</div>`;
+    div.onclick = () => showToast(`▶ Playing ${a.song}`);
+    container.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function switchTab(tab, btnEl) {
+  if (state.activeTab === tab) return;
+
+  // If in a room, leave first
+  if (document.getElementById('roomView').classList.contains('active')) {
+    leaveRoom();
+  }
+
+  state.activeTab = tab;
+
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${tab}`).classList.add('active');
+
+  if (btnEl) {
+    document.querySelectorAll('.topbar-tab').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
+}
+
+// ══════════════════════════════════════════
+// FEED ACTIONS
+// ══════════════════════════════════════════
+function toggleLike(postId) {
+  const post = posts.find(p => p.id === postId);
+  post.liked = !post.liked;
+  post.likes += post.liked ? 1 : -1;
+  // Re-render just that post
+  document.getElementById(`post-${postId}`).innerHTML = buildPostHTML(post);
+  showToast(post.liked ? '❤️ Added to your likes' : '💔 Removed from likes');
+}
+
+function toggleReaction(postId, reactionIdx) {
+  const post = posts.find(p => p.id === postId);
+  const r = post.reactions[reactionIdx];
+  r.reacted = !r.reacted;
+  r.count += r.reacted ? 1 : -1;
+  document.getElementById(`post-${postId}`).innerHTML = buildPostHTML(post);
+  if (r.reacted) showToast(`${r.emoji} Reaction added!`);
+}
+
+// ══════════════════════════════════════════
+// POST MODAL
+// ══════════════════════════════════════════
+function openPostModal() { openModal('postModal'); }
+
+function validatePostModal() {
+  const s = document.getElementById('postSongInput').value.trim();
+  const c = document.getElementById('postCaptionInput').value.trim();
+  document.getElementById('postConfirmBtn').disabled = !(s && c);
+}
+
+function submitPost() {
+  const songRaw = document.getElementById('postSongInput').value.trim();
+  const caption = document.getElementById('postCaptionInput').value.trim();
+  const parts = songRaw.split('—').map(s => s.trim());
+  const newPost = {
+    id: Date.now(),
+    user: 'Rahul', initial: 'R', color: '#1DB954',
+    time: 'Just now',
+    track: { name: parts[0] || songRaw, artist: parts[1] || 'Unknown Artist', art: 'https://i.scdn.co/image/ab67616d0000b2735ef878a782c987d664b7460' },
+    caption,
+    likes: 0, liked: false,
+    reactions: [{emoji:'🔥',count:0,reacted:false},{emoji:'❤️',count:0,reacted:false},{emoji:'✨',count:0,reacted:false}],
+    comments: []
+  };
+  posts.unshift(newPost);
+  closeModal('postModal');
+  document.getElementById('postSongInput').value = '';
+  document.getElementById('postCaptionInput').value = '';
+  document.getElementById('postConfirmBtn').disabled = true;
+  renderFeed();
+  showToast('🎵 Posted to your Circle!');
+}
+
+// ══════════════════════════════════════════
+// COMMENT MODAL
+// ══════════════════════════════════════════
+function openCommentModal(postId) {
+  const post = posts.find(p => p.id === postId);
+  state.activeCommentPostId = postId;
+  document.getElementById('commentModalTitle').textContent = post.track.name;
+  document.getElementById('commentModalArtist').textContent = post.track.artist;
+  document.getElementById('commentModalArt').innerHTML =
+    `<img src="${post.track.art}" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.background='#333';this.style.display='none'"/>`;
+  renderComments(post);
+  openModal('commentModal');
+}
+
+function renderComments(post) {
+  const list = document.getElementById('commentsListEl');
+  list.innerHTML = post.comments.map(c => `
+    <div class="comment-full">
+      <div class="comment-full-avatar" style="background:${c.color};">${c.initial}</div>
+      <div>
+        <span class="cf-user">${c.user}</span>
+        <span class="cf-time">${c.time}</span>
+        <div class="cf-text">${c.text}</div>
+        <div class="cf-actions">
+          <button class="cf-action">❤️ ${c.likes}</button>
+          <button class="cf-action">Reply</button>
+        </div>
+      </div>
+    </div>`).join('') || '<div style="color:var(--sp-sub);font-size:0.85rem;text-align:center;padding:1rem 0;">No comments yet. Be the first! 👋</div>';
+}
+
+function handleCommentKey(e) { if (e.key === 'Enter') submitComment(); }
+
+function submitComment() {
+  const input = document.getElementById('commentInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const post = posts.find(p => p.id === state.activeCommentPostId);
+  post.comments.push({ id: Date.now(), user: 'Rahul', initial: 'R', color: '#1DB954', text, time: 'Just now', likes: 0 });
+  input.value = '';
+  renderComments(post);
+  // Scroll to bottom of comments
+  const list = document.getElementById('commentsListEl');
+  list.scrollTop = list.scrollHeight;
+  // Update feed post comment count
+  document.getElementById(`post-${post.id}`).innerHTML = buildPostHTML(post);
+  showToast('💬 Comment posted!');
+}
+
+// ══════════════════════════════════════════
+// ROOMS
+// ══════════════════════════════════════════
+function openCreateRoomModal() { openModal('createRoomModal'); }
+
+function selectPrivacy(type) {
+  state.privacy = type;
+  document.getElementById('privPublic').classList.toggle('selected', type === 'public');
+  document.getElementById('privPrivate').classList.toggle('selected', type === 'private');
+}
+
+function validateRoomModal() {
+  const name = document.getElementById('roomNameInput').value.trim();
+  document.getElementById('roomConfirmBtn').disabled = !name;
+}
+
+function createRoom() {
+  const name = document.getElementById('roomNameInput').value.trim();
+  const newRoom = {
+    id: Date.now(),
+    name,
+    host: 'Rahul (You)',
+    listeners: 1,
+    track: { name: 'Who Knows', artist: 'Daniel Caesar', art: 'https://i.scdn.co/image/ab67616d0000b2735ef878a782c987d664b7460' },
+    chips: [{i:'R',c:'#1DB954'}]
+  };
+  rooms.unshift(newRoom);
+  closeModal('createRoomModal');
+  document.getElementById('roomNameInput').value = '';
+  document.getElementById('roomConfirmBtn').disabled = true;
+  showToast('🎉 Room created! Inviting friends…');
+  setTimeout(() => joinRoom(newRoom.id), 600);
+}
+
+function joinRoom(roomId) {
+  const room = rooms.find(r => r.id === roomId);
+  state.currentRoom = room;
+
+  // Hide tab screens, show room view
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('roomView').classList.add('active');
+
+  // Fill room data
+  document.getElementById('roomTrackTitle').textContent = room.track.name;
+  document.getElementById('roomTrackArtist').textContent = `${room.track.artist} · ${room.name}`;
+  document.getElementById('roomListenerCount').textContent = `${room.listeners} listening`;
+  document.getElementById('roomAlbumArt').innerHTML =
+    `<img src="${room.track.art}" alt="${room.track.name}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div class=\\'room-album-art-placeholder\\'>🎵</div>'"/>`;
+
+  // Listeners
+  const listenersGrid = document.getElementById('roomListeners');
+  listenersGrid.innerHTML = room.chips.map(c =>
+    `<div class="room-listener-chip">
+      <div class="chip-avatar" style="background:${c.c};">${c.i}</div>
+      User${c.i}
+    </div>`
+  ).join('');
+
+  // Add "you" chip
+  listenersGrid.innerHTML += `<div class="room-listener-chip"><div class="chip-avatar" style="background:#1DB954;">R</div>You</div>`;
+
+  // Chat
+  const chatEl = document.getElementById('chatMessages');
+  chatEl.innerHTML = '';
+  chatSeedMessages.forEach(msg => appendChatMsg(msg));
+
+  // Start progress simulation
+  startRoomProgress();
+  showToast(`🎧 Joined "${room.name}"`);
+}
+
+function leaveRoom() {
+  clearInterval(state.progressInterval);
+  document.getElementById('roomView').classList.remove('active');
+  // Re-activate rooms tab
+  document.getElementById('screen-rooms').classList.add('active');
+  state.activeTab = 'rooms';
+  document.querySelectorAll('.topbar-tab').forEach((b,i) => { b.classList.remove('active'); if(i===1) b.classList.add('active'); });
+  showToast('👋 Left the room');
+}
+
+function appendChatMsg(msg) {
+  const chatEl = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `
+    <div class="chat-msg-avatar" style="background:${msg.color};">${msg.initial}</div>
+    <div class="chat-msg-body">
+      <div class="chat-msg-user">${msg.user}</div>
+      <div class="chat-msg-text">${msg.text}</div>
+      <div class="chat-msg-time">${msg.time}</div>
+    </div>`;
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function handleChatKey(e) { if (e.key === 'Enter') sendChat(); }
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  appendChatMsg({ user: 'Rahul', initial: 'R', color: '#1DB954', text, time: 'Just now' });
+  input.value = '';
+  // Simulate reply after a beat
+  setTimeout(() => {
+    const replies = ['🔥🔥🔥', 'facts!', 'this song is it fr', 'agreed 💯', 'yesss', 'same omg'];
+    const bots = [{user:'Marcus',initial:'M',color:'#F59E0B'},{user:'Aisha',initial:'A',color:'#EC4899'}];
+    const bot = bots[Math.floor(Math.random()*bots.length)];
+    appendChatMsg({ ...bot, text: replies[Math.floor(Math.random()*replies.length)], time: 'Just now' });
+  }, 1200 + Math.random() * 800);
+}
+
+function toggleRoomPlay(btn) {
+  state.roomIsPlaying = !state.roomIsPlaying;
+  const icon = document.getElementById('roomPlayIcon');
+  if (state.roomIsPlaying) {
+    icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+    startRoomProgress();
+  } else {
+    icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    clearInterval(state.progressInterval);
+  }
+}
+
+function startRoomProgress() {
+  clearInterval(state.progressInterval);
+  if (state.progressVal >= 100) state.progressVal = 0;
+  state.progressInterval = setInterval(() => {
+    state.progressVal = Math.min(100, state.progressVal + 0.05);
+    const bar = document.getElementById('roomProgress');
+    if (bar) bar.style.width = state.progressVal + '%';
+    // Update time display
+    const total = 247; // 4:07
+    const current = Math.floor((state.progressVal / 100) * total);
+    const m = Math.floor(current / 60);
+    const s = current % 60;
+    const el = document.getElementById('roomTimeCurrent');
+    if (el) el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    if (state.progressVal >= 100) clearInterval(state.progressInterval);
+  }, 200);
+}
+
+// ══════════════════════════════════════════
+// NOW PLAYING BAR
+// ══════════════════════════════════════════
+function togglePlay(btn) {
+  state.isPlaying = !state.isPlaying;
+  const icon = document.getElementById('npPlayIcon');
+  icon.innerHTML = state.isPlaying
+    ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+  showToast(state.isPlaying ? '▶ Playing Who Knows' : '⏸ Paused');
+}
+
+function seekTrack(e, bar) {
+  const rect = bar.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+  document.getElementById('npBar').style.width = pct + '%';
+  const total = 247;
+  const current = Math.floor((pct / 100) * total);
+  const m = Math.floor(current / 60);
+  const s = current % 60;
+  document.getElementById('npTimeCurrent').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+function openNotifications() {
+  showToast('🔔 3 new reactions on your posts');
+}
+
+// ══════════════════════════════════════════
+// MODAL HELPERS
+// ══════════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+renderFeed();
+renderRooms();
+renderActivity();
+
+// Simulate np bar progress
+let npProg = 38;
+setInterval(() => {
+  if (!state.isPlaying) return;
+  npProg = Math.min(100, npProg + 0.02);
+  document.getElementById('npBar').style.width = npProg + '%';
+}, 200);
+</script>
+</body>
+</html>
